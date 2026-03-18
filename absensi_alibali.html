@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistem Absensi GPS — PT Ali Bali Express</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#F0F4F8;min-height:100vh;display:flex;justify-content:center;align-items:flex-start;padding:24px 12px}
+.phone{width:390px;background:#fff;border-radius:32px;box-shadow:0 4px 24px rgba(0,0,0,0.10);overflow:hidden;display:flex;flex-direction:column;min-height:700px}
+.page{display:none;flex-direction:column;flex:1}
+.page.active{display:flex}
+.hdr{padding:20px 16px 14px;color:#fff;flex-shrink:0}
+.hdr-blue{background:#1A73E8}.hdr-admin{background:#1558B0}
+.hdr h2{font-size:16px;font-weight:600}
+.hdr p{font-size:11px;opacity:.85;margin-top:2px}
+.hdr-row{display:flex;justify-content:space-between;align-items:center}
+.body{padding:14px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px}
+.card{background:#fff;border:1px solid #E8EAED;border-radius:14px;padding:14px}
+.lbl{font-size:11px;color:#5F6368;margin-bottom:4px}
+.big-time{font-size:28px;font-weight:600;color:#1A73E8;text-align:center}
+.date-txt{font-size:12px;color:#5F6368;text-align:center;margin-top:2px}
+.gps-txt{font-size:11px;font-family:'Courier New',monospace;color:#202124;margin-top:4px;line-height:1.8}
+.badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:500}
+.bg{background:#E6F4EA;color:#137333}.br{background:#FCE8E6;color:#A50E0E}
+.bb{background:#E8F0FE;color:#1558B0}.bgr{background:#F1F3F4;color:#5F6368}
+.btn{width:100%;padding:11px;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;color:#fff;margin-top:2px;transition:opacity .15s}
+.btn:hover{opacity:.88}
+.btn-g{background:#34A853}.btn-r{background:#EA4335}.btn-dis{background:#BDC1C6;cursor:not-allowed}
+.btn-sm{padding:7px 14px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:#fff;background:#1A73E8;transition:opacity .15s}
+.btn-sm:hover{opacity:.88}
+.btn-out{background:transparent;border:1px solid #DADCE0;color:#202124;width:100%;padding:10px;border-radius:10px;font-size:13px;cursor:pointer;margin-top:4px}
+.btn-logout{background:rgba(255,255,255,.2);border:none;color:#fff;font-size:11px;cursor:pointer;padding:5px 10px;border-radius:6px}
+.nav-tabs{display:flex;border-bottom:1px solid #E8EAED;background:#fff;flex-shrink:0}
+.nav-tab{flex:1;padding:10px 0;font-size:12px;border:none;background:transparent;cursor:pointer;color:#5F6368;border-bottom:2px solid transparent}
+.nav-tab.active{color:#1A73E8;border-bottom-color:#1A73E8;font-weight:600}
+.tab-body{display:none;flex:1;overflow-y:auto;padding:14px;flex-direction:column;gap:10px}
+.tab-body.active{display:flex}
+.field-group{margin-bottom:12px}
+.field-group label{display:block;font-size:11px;color:#5F6368;margin-bottom:4px}
+.field-group input{width:100%;padding:9px 12px;border:1px solid #DADCE0;border-radius:8px;font-size:13px;background:#fff;color:#202124;outline:none;transition:border .2s}
+.field-group input:focus{border-color:#1A73E8}
+.sec{font-size:11px;font-weight:700;color:#5F6368;margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase}
+.alert{padding:10px 12px;border-radius:10px;font-size:12px;line-height:1.5}
+.a-ok{background:#E6F4EA;color:#137333;border:1px solid #CEEAD6}
+.a-err{background:#FCE8E6;color:#A50E0E;border:1px solid #F5C6C6}
+.row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #F1F3F4}
+.row:last-child{border-bottom:none}
+.av{width:34px;height:34px;border-radius:50%;background:#E8F0FE;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#1558B0;flex-shrink:0}
+.metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.metric{background:#F8F9FA;border-radius:10px;padding:12px;text-align:center;border:1px solid #E8EAED}
+.metric-val{font-size:22px;font-weight:700}
+.metric-lbl{font-size:10px;color:#5F6368;margin-top:2px}
+.status-row{display:flex;align-items:center;gap:8px;margin-top:6px}
+.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.cam-box{width:100%;aspect-ratio:4/3;background:#111;border-radius:10px;overflow:hidden;position:relative}
+video{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover}
+canvas{display:none}
+.cam-overlay{position:absolute;bottom:0;left:0;right:0;padding:10px;display:flex;justify-content:center;background:linear-gradient(transparent,rgba(0,0,0,.5))}
+.cam-hint{position:absolute;top:8px;left:0;right:0;text-align:center;font-size:11px;color:#fff;background:rgba(0,0,0,.4);padding:4px}
+.snap-preview{width:100%;aspect-ratio:4/3;border-radius:10px;overflow:hidden;position:relative}
+.snap-preview img{width:100%;height:100%;object-fit:cover}
+.snap-label{position:absolute;bottom:6px;left:8px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;padding:2px 8px;border-radius:4px}
+.report-row{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid #F1F3F4}
+.report-row:last-child{border-bottom:none}
+.report-thumb{width:38px;height:38px;border-radius:8px;object-fit:cover;flex-shrink:0}
+.report-thumb-empty{width:38px;height:38px;border-radius:8px;background:#F1F3F4;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px}
+.quick-fill{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.chip{padding:4px 12px;border-radius:99px;font-size:11px;font-weight:600;cursor:pointer;background:#E8F0FE;color:#1558B0;border:none;transition:background .15s}
+.chip:hover{background:#D2E3FC}
+.chip-gray{background:#F1F3F4;color:#5F6368}
+.chip-gray:hover{background:#E8EAED}
+</style>
+</head>
+<body>
+<div class="phone">
+
+<!-- ═══ LOGIN ═══ -->
+<div class="page active" id="pg-login">
+  <div class="hdr hdr-blue" style="padding:30px 20px 22px">
+    <div style="font-size:28px;margin-bottom:6px">🚀</div>
+    <h2 style="font-size:18px">ALI BALI EXPRESS</h2>
+    <p style="font-size:12px">Sistem Absensi Karyawan Berbasis GPS</p>
+  </div>
+  <div class="body">
+    <div class="card">
+      <div class="sec">Masuk ke akun Anda</div>
+      <div class="field-group"><label>ID Karyawan</label><input id="inp-id" value="EMP001" placeholder="Contoh: EMP001"></div>
+      <div class="field-group" style="margin-bottom:16px"><label>Password</label><input id="inp-pw" type="password" value="1234" placeholder="Password"></div>
+      <button class="btn btn-g" id="btn-login">Masuk →</button>
+    </div>
+    <div class="card">
+      <div class="lbl" style="margin-bottom:6px;font-weight:600">Akun demo tersedia:</div>
+      <div style="font-family:'Courier New',monospace;font-size:11px;color:#5F6368;line-height:2.2">
+        EMP001 · Ellan &nbsp;→ password: 1234<br>
+        EMP002 · Aldy &nbsp;&nbsp;→ password: 1243<br>
+        EMP003 · Rossa &nbsp;→ password: 1212<br>
+        ADMIN &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ password: admin
+      </div>
+      <div class="quick-fill">
+        <button class="chip" onclick="fill('EMP001','1234')">Ellan</button>
+        <button class="chip" onclick="fill('EMP002','1243')">Aldy</button>
+        <button class="chip" onclick="fill('EMP003','1212')">Rossa</button>
+        <button class="chip chip-gray" onclick="fill('ADMIN','admin')">Admin HRD</button>
+      </div>
+    </div>
+    <div id="login-err" style="display:none" class="alert a-err">❌ ID atau password salah. Silakan coba lagi.</div>
+  </div>
+</div>
+
+<!-- ═══ KARYAWAN ═══ -->
+<div class="page" id="pg-kar">
+  <div class="hdr hdr-blue">
+    <div class="hdr-row">
+      <div><h2 id="k-nama">Ellan</h2><p id="k-sub">Karyawan · EMP001</p></div>
+      <button class="btn-logout" onclick="logout()">Keluar</button>
+    </div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="tab('absen')">Absensi</button>
+    <button class="nav-tab" onclick="tab('riwayat')">Riwayat</button>
+    <button class="nav-tab" onclick="tab('profil')">Profil</button>
+  </div>
+
+  <!-- Absensi -->
+  <div class="tab-body active" id="tab-absen">
+    <div class="card">
+      <div class="big-time" id="k-jam">--:--:--</div>
+      <div class="date-txt" id="k-tgl"></div>
+    </div>
+    <div class="card">
+      <div class="lbl">📍 Status Lokasi GPS</div>
+      <div class="gps-txt" id="k-gps">Mendeteksi lokasi...</div>
+      <div id="k-rbadge" style="margin-top:6px"></div>
+    </div>
+    <div class="card" id="cam-section" style="display:none">
+      <div class="lbl" style="margin-bottom:8px;font-weight:600">📸 Foto Wajah — Absen Masuk</div>
+      <div class="cam-box" id="cam-box">
+        <video id="vid" autoplay playsinline muted></video>
+        <canvas id="cnv"></canvas>
+        <div class="cam-hint" id="cam-hint">Posisikan wajah Anda di tengah frame</div>
+        <div class="cam-overlay">
+          <button class="btn-sm" onclick="ambilFoto()">📷 Ambil Foto</button>
+        </div>
+      </div>
+      <div id="preview-wrap" style="display:none;margin-top:10px">
+        <div class="snap-preview">
+          <img id="foto-preview" src="">
+          <div class="snap-label" id="foto-label">Foto diambil</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn-sm" style="flex:1;background:#9AA0A6" onclick="ulangi()">🔄 Ulangi</button>
+          <button class="btn-sm" style="flex:1" onclick="konfirmasiMasuk()">✅ Konfirmasi Masuk</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="lbl">Status Kehadiran</div>
+      <div class="status-row">
+        <div class="dot" id="k-dot" style="background:#BDC1C6"></div>
+        <div style="font-size:13px;font-weight:600" id="k-stxt">Belum absen</div>
+      </div>
+      <div id="k-durasi" style="font-size:11px;color:#5F6368;margin-top:4px"></div>
+    </div>
+    <button class="btn btn-g" id="btn-masuk" onclick="mulaiKamera()">📸 Absen Masuk</button>
+    <button class="btn btn-dis" id="btn-pulang" onclick="absenPulang()" disabled>🔚 Absen Pulang</button>
+    <div id="k-alert" style="display:none" class="alert"></div>
+  </div>
+
+  <!-- Riwayat -->
+  <div class="tab-body" id="tab-riwayat">
+    <div class="card">
+      <div class="sec">Riwayat Absen Hari Ini</div>
+      <div id="riwayat-list"><div style="font-size:12px;color:#5F6368;padding:8px 0">Belum ada catatan absensi hari ini.</div></div>
+    </div>
+  </div>
+
+  <!-- Profil -->
+  <div class="tab-body" id="tab-profil">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+        <div class="av" style="width:50px;height:50px;font-size:16px" id="p-av">EL</div>
+        <div>
+          <div style="font-weight:700;font-size:15px" id="p-nama">Ellan</div>
+          <div style="font-size:12px;color:#5F6368" id="p-jab">Karyawan</div>
+        </div>
+      </div>
+      <div style="border-top:1px solid #F1F3F4;padding-top:10px">
+        <div class="row"><span style="font-size:12px;color:#5F6368">ID Karyawan</span><span style="font-size:12px;font-weight:700" id="p-id">EMP001</span></div>
+        <div class="row"><span style="font-size:12px;color:#5F6368">Perusahaan</span><span style="font-size:12px">PT Ali Bali Express</span></div>
+        <div class="row"><span style="font-size:12px;color:#5F6368">Kantor</span><span style="font-size:12px">Jl. Nusakambangan</span></div>
+        <div class="row" style="border-bottom:none"><span style="font-size:12px;color:#5F6368">Radius Absen</span><span class="badge bb">100 meter</span></div>
+      </div>
+    </div>
+    <button class="btn-out" onclick="logout()">Keluar dari Akun</button>
+  </div>
+</div>
+
+<!-- ═══ ADMIN ═══ -->
+<div class="page" id="pg-admin">
+  <div class="hdr hdr-admin">
+    <div class="hdr-row">
+      <div><h2>Dashboard HRD</h2><p>PT Ali Bali Express</p></div>
+      <button class="btn-logout" onclick="logout()">Keluar</button>
+    </div>
+  </div>
+  <div class="body">
+    <div class="metric-grid">
+      <div class="metric"><div class="metric-val" style="color:#1A73E8">3</div><div class="metric-lbl">Total</div></div>
+      <div class="metric"><div class="metric-val" style="color:#34A853" id="m-hadir">0</div><div class="metric-lbl">Hadir</div></div>
+      <div class="metric"><div class="metric-val" style="color:#EA4335" id="m-belum">3</div><div class="metric-lbl">Belum</div></div>
+    </div>
+    <div class="card">
+      <div class="sec">📋 Laporan Absensi Karyawan</div>
+      <div id="report-list"></div>
+    </div>
+    <div class="card">
+      <div class="sec">⚡ Log Real-time</div>
+      <div id="admin-log"><div style="font-size:12px;color:#5F6368;padding:4px 0">Belum ada aktivitas hari ini.</div></div>
+    </div>
+    <div class="card">
+      <div class="sec">⚙️ Pengaturan Geofence</div>
+      <div style="font-family:'Courier New',monospace;font-size:11px;color:#5F6368;line-height:2.2">
+        Koordinat &nbsp;: -8.6478, 115.2191<br>
+        Alamat &nbsp;&nbsp;&nbsp;&nbsp;: Jl. Nusakambangan, Denpasar<br>
+        Radius &nbsp;&nbsp;&nbsp;&nbsp;: <span class="badge bb">100 meter</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const DB={
+  EMP001:{nama:'Ellan',jabatan:'Karyawan',pw:'1234'},
+  EMP002:{nama:'Aldy',jabatan:'Karyawan',pw:'1243'},
+  EMP003:{nama:'Rossa',jabatan:'Karyawan',pw:'1212'},
+  ADMIN:{nama:'Manager HRD',jabatan:'Administrator',pw:'admin'},
+};
+const report={
+  EMP001:{nama:'Ellan',masuk:null,pulang:null,foto:null,durasi:null},
+  EMP002:{nama:'Aldy',masuk:null,pulang:null,foto:null,durasi:null},
+  EMP003:{nama:'Rossa',masuk:null,pulang:null,foto:null,durasi:null},
+};
+let uid='',dalamR=false,sudahMasuk=false,tMasuk=null,fotoData=null,stream=null;
+let logs=[],jamInt=null,gpsInt=null;
+
+function fill(i,p){document.getElementById('inp-id').value=i;document.getElementById('inp-pw').value=p;}
+function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(id).classList.add('active');}
+
+function logout(){
+  clearInterval(jamInt);clearInterval(gpsInt);stopKamera();
+  uid='';sudahMasuk=false;tMasuk=null;fotoData=null;
+  showPage('pg-login');
+}
+
+document.getElementById('btn-login').onclick=function(){
+  const i=document.getElementById('inp-id').value.trim().toUpperCase();
+  const p=document.getElementById('inp-pw').value.trim();
+  if(DB[i]&&DB[i].pw===p){
+    document.getElementById('login-err').style.display='none';
+    uid=i;
+    i==='ADMIN'?loginAdmin():loginKar(i);
+  } else {
+    document.getElementById('login-err').style.display='block';
+  }
+};
+
+function loginKar(i){
+  const d=DB[i];
+  document.getElementById('k-nama').textContent=d.nama;
+  document.getElementById('k-sub').textContent='Karyawan · '+i;
+  document.getElementById('p-nama').textContent=d.nama;
+  document.getElementById('p-jab').textContent=d.jabatan;
+  document.getElementById('p-id').textContent=i;
+  document.getElementById('p-av').textContent=d.nama.substring(0,2).toUpperCase();
+  sudahMasuk=false;tMasuk=null;fotoData=null;
+  document.getElementById('btn-masuk').className='btn btn-g';
+  document.getElementById('btn-masuk').disabled=false;
+  document.getElementById('btn-pulang').className='btn btn-dis';
+  document.getElementById('btn-pulang').disabled=true;
+  document.getElementById('k-dot').style.background='#BDC1C6';
+  document.getElementById('k-stxt').textContent='Belum absen';
+  document.getElementById('k-durasi').textContent='';
+  document.getElementById('k-alert').style.display='none';
+  document.getElementById('cam-section').style.display='none';
+  document.getElementById('preview-wrap').style.display='none';
+  document.getElementById('riwayat-list').innerHTML='<div style="font-size:12px;color:#5F6368;padding:8px 0">Belum ada catatan absensi hari ini.</div>';
+  tab('absen');startJam();startGPS();showPage('pg-kar');
+}
+
+function loginAdmin(){renderReport();renderLog();showPage('pg-admin');}
+
+function tab(name){
+  const names=['absen','riwayat','profil'];
+  document.querySelectorAll('.nav-tab').forEach((t,i)=>t.classList.toggle('active',names[i]===name));
+  document.querySelectorAll('.tab-body').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+function startJam(){
+  clearInterval(jamInt);
+  function tick(){
+    const n=new Date();
+    document.getElementById('k-jam').textContent=n.toLocaleTimeString('id-ID');
+    document.getElementById('k-tgl').textContent=n.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    if(sudahMasuk&&tMasuk){
+      const m=Math.floor((Date.now()-tMasuk)/60000);
+      document.getElementById('k-durasi').textContent='Durasi kerja: '+Math.floor(m/60)+'j '+(m%60)+'m';
+    }
+  }
+  tick();jamInt=setInterval(tick,1000);
+}
+
+function startGPS(){
+  clearInterval(gpsInt);
+  function cek(){
+    const o=(Math.random()-0.5)*0.0016;
+    const lat=(-8.6478+o).toFixed(6),lon=(115.2191+o).toFixed(6);
+    const dist=Math.round(Math.abs(o)*111000);
+    dalamR=dist<=100;
+    document.getElementById('k-gps').innerHTML='Lat: '+lat+'   Lon: '+lon+'<br>Kantor : Jl. Nusakambangan, Denpasar';
+    document.getElementById('k-rbadge').innerHTML=dalamR
+      ?'<span class="badge bg">✅ Dalam radius ('+dist+' m dari kantor)</span>'
+      :'<span class="badge br">❌ Di luar radius ('+dist+' m — batas 100 m)</span>';
+  }
+  cek();gpsInt=setInterval(cek,4000);
+}
+
+function showAlert(t,m){
+  const el=document.getElementById('k-alert');
+  el.className='alert '+(t==='ok'?'a-ok':'a-err');
+  el.textContent=m;el.style.display='block';
+  setTimeout(()=>el.style.display='none',4000);
+}
+
+async function mulaiKamera(){
+  if(!dalamR){showAlert('err','❌ Gagal: Anda berada di luar radius kantor!');return;}
+  document.getElementById('cam-section').style.display='block';
+  document.getElementById('cam-box').style.display='block';
+  document.getElementById('preview-wrap').style.display='none';
+  document.getElementById('btn-masuk').className='btn btn-dis';
+  document.getElementById('btn-masuk').disabled=true;
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});
+    document.getElementById('vid').srcObject=stream;
+    document.getElementById('cam-hint').textContent='Posisikan wajah Anda di tengah frame';
+  }catch(e){
+    document.getElementById('cam-hint').textContent='Kamera tidak tersedia — klik lanjut';
+    document.getElementById('cam-section').querySelector('.cam-overlay').innerHTML=
+      '<button class="btn-sm" onclick="pakaiDefault()">Lanjut tanpa kamera →</button>';
+  }
+}
+
+function ambilFoto(){
+  const v=document.getElementById('vid');
+  const c=document.getElementById('cnv');
+  c.width=v.videoWidth||320;c.height=v.videoHeight||240;
+  c.getContext('2d').drawImage(v,0,0);
+  fotoData=c.toDataURL('image/jpeg',0.75);
+  document.getElementById('foto-preview').src=fotoData;
+  document.getElementById('foto-label').textContent=new Date().toLocaleTimeString('id-ID');
+  document.getElementById('preview-wrap').style.display='block';
+  document.getElementById('cam-box').style.display='none';
+  stopKamera();
+}
+
+function pakaiDefault(){
+  fotoData=null;
+  document.getElementById('preview-wrap').innerHTML='<div style="text-align:center;padding:12px;color:#5F6368;font-size:12px">👤 Absen tanpa foto</div><div style="display:flex;gap:8px;margin-top:4px"><button class="btn-sm" style="flex:1" onclick="konfirmasiMasuk()">✅ Konfirmasi Masuk</button></div>';
+  document.getElementById('preview-wrap').style.display='block';
+  document.getElementById('cam-box').style.display='none';
+}
+
+function ulangi(){
+  fotoData=null;
+  document.getElementById('cam-box').style.display='block';
+  document.getElementById('preview-wrap').style.display='none';
+  mulaiKamera();
+}
+
+function stopKamera(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}}
+
+function konfirmasiMasuk(){
+  sudahMasuk=true;tMasuk=Date.now();
+  const wkt=new Date().toLocaleTimeString('id-ID');
+  document.getElementById('k-dot').style.background='#34A853';
+  document.getElementById('k-stxt').textContent='Hadir — masuk '+wkt;
+  document.getElementById('btn-pulang').className='btn btn-r';
+  document.getElementById('btn-pulang').disabled=false;
+  document.getElementById('cam-section').style.display='none';
+  const rec={uid,nama:DB[uid].nama,tipe:'MASUK',wkt,foto:fotoData};
+  logs.push(rec);tambahRiwayat(rec);
+  if(report[uid]){report[uid].masuk=wkt;report[uid].foto=fotoData;}
+  showAlert('ok','✅ Absen masuk berhasil dicatat! '+wkt);
+}
+
+function absenPulang(){
+  if(!dalamR){showAlert('err','❌ Gagal: Anda berada di luar radius kantor!');return;}
+  const wkt=new Date().toLocaleTimeString('id-ID');
+  const mnt=Math.floor((Date.now()-tMasuk)/60000);
+  const dur=Math.floor(mnt/60)+'j '+(mnt%60)+'m';
+  document.getElementById('k-dot').style.background='#1A73E8';
+  document.getElementById('k-stxt').textContent='Pulang '+wkt;
+  document.getElementById('k-durasi').textContent='Total jam kerja: '+dur;
+  document.getElementById('btn-pulang').className='btn btn-dis';
+  document.getElementById('btn-pulang').disabled=true;
+  const rec={uid,nama:DB[uid].nama,tipe:'PULANG',wkt,dur};
+  logs.push(rec);tambahRiwayat(rec);
+  if(report[uid]){report[uid].pulang=wkt;report[uid].durasi=dur;}
+  showAlert('ok','✅ Absen pulang berhasil! Jam kerja: '+dur);
+}
+
+function tambahRiwayat(rec){
+  const el=document.getElementById('riwayat-list');
+  if(el.querySelector('[data-empty]')||el.firstChild&&el.firstChild.style&&el.firstChild.tagName==='DIV')el.innerHTML='';
+  const row=document.createElement('div');row.className='report-row';
+  const badge=rec.tipe==='MASUK'?'bg':'bb';
+  let fEl=rec.tipe==='MASUK'&&rec.foto?'<img class="report-thumb" src="'+rec.foto+'">':'<div class="report-thumb-empty">'+(rec.tipe==='MASUK'?'📷':'🏠')+'</div>';
+  row.innerHTML=fEl+'<div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:600">'+rec.tipe+'</span><span class="badge '+badge+'">'+rec.wkt+'</span></div>'+(rec.dur?'<div style="font-size:11px;color:#5F6368;margin-top:2px">Jam kerja: '+rec.dur+'</div>':'')+'</div>';
+  el.prepend(row);
+}
+
+function renderReport(){
+  const el=document.getElementById('report-list');el.innerHTML='';
+  let hadir=0;
+  Object.entries(report).forEach(([id,r])=>{
+    if(r.masuk)hadir++;
+    const badge=r.masuk?'bg':'bgr';const stxt=r.masuk?'Hadir':'Belum absen';
+    const row=document.createElement('div');row.className='report-row';
+    const av=r.nama.substring(0,2).toUpperCase();
+    let fEl=r.foto?'<img class="report-thumb" src="'+r.foto+'" style="width:38px;height:38px">':'<div class="av">'+av+'</div>';
+    row.innerHTML=fEl+'<div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:600">'+r.nama+'</span><span class="badge '+badge+'">'+stxt+'</span></div><div style="font-size:11px;color:#5F6368;margin-top:3px">'+(r.masuk?'Masuk: '+r.masuk:'—')+(r.pulang?' · Pulang: '+r.pulang:'')+(r.durasi?' · '+r.durasi:'')+'</div></div>';
+    el.appendChild(row);
+  });
+  document.getElementById('m-hadir').textContent=hadir;
+  document.getElementById('m-belum').textContent=3-hadir;
+}
+
+function renderLog(){
+  const el=document.getElementById('admin-log');
+  if(!logs.length){el.innerHTML='<div style="font-size:12px;color:#5F6368;padding:4px 0">Belum ada aktivitas hari ini.</div>';return;}
+  el.innerHTML='';
+  [...logs].reverse().forEach(r=>{
+    const av=r.nama.substring(0,2).toUpperCase();
+    const badge=r.tipe==='MASUK'?'bg':'bb';
+    const row=document.createElement('div');row.className='row';
+    row.innerHTML='<div style="display:flex;align-items:center;gap:8px"><div class="av">'+av+'</div><div><div style="font-size:13px;font-weight:600">'+r.nama+'</div><div style="font-size:10px;color:#5F6368">'+r.uid+' · '+r.wkt+'</div></div></div><span class="badge '+badge+'">'+r.tipe+'</span>';
+    el.appendChild(row);
+  });
+  renderReport();
+}
+</script>
+</body>
+</html>
